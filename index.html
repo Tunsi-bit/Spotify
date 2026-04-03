@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Mini Music App</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <!-- Sfondo cuoricini -->
+    <canvas id="hearts"></canvas>
+
+    <!-- Barra di ricerca -->
+    <div id="search-bar">
+        <input type="text" id="search" placeholder="Cerca una canzone...">
+    </div>
+
+    <!-- Risultati della ricerca -->
+    <div id="results"></div>
+
+    <!-- Playlist personale -->
+    <h3>La tua Playlist</h3>
+    <div id="playlist"></div>
+
+    <!-- Player YouTube invisibile ma audio funziona -->
+    <div id="ytPlayer"></div>
+
+    <!-- API YouTube -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+// ------------------- CUORICINI -------------------
+const canvas = document.getElementById('hearts');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext('2d');
+
+let hearts = [];
+for(let i=0;i<50;i++){
+    hearts.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        size: Math.random()*20+10,
+        speed: Math.random()*2+1
+    });
+}
+
+function drawHearts() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    hearts.forEach(h=>{
+        ctx.beginPath();
+        ctx.fillStyle='pink';
+        ctx.arc(h.x,h.y,h.size,0,Math.PI*2);
+        ctx.fill();
+        h.y -= h.speed;
+        if(h.y<0) h.y = canvas.height;
+    });
+    requestAnimationFrame(drawHearts);
+}
+drawHearts();
+
+// ------------------- YOUTUBE PLAYER -------------------
+let ytPlayer = null;
+
+function onYouTubeIframeAPIReady() {
+    console.log("YT API pronta");
+}
+
+function playYouTube(videoId){
+    if(typeof YT === "undefined" || !YT.Player){
+        setTimeout(()=>playYouTube(videoId), 500);
+        return;
+    }
+
+    if(!ytPlayer){
+        ytPlayer = new YT.Player('ytPlayer', {
+            videoId: videoId,
+            playerVars: { autoplay: 1, controls: 0 },
+            width: 1,
+            height: 1
+        });
+    } else {
+        ytPlayer.loadVideoById(videoId);
+    }
+}
+
+// ------------------- PLAYLIST -------------------
+let playlist = JSON.parse(localStorage.getItem("myPlaylist")) || [];
+
+function renderPlaylist(){
+    let html = '';
+    playlist.forEach(track=>{
+        html += `<div class="playlist-item">
+                    <p>${track.title}</p>
+                    <button class="playlist-play-btn" data-videoid="${track.videoId}">▶️ Play</button>
+                 </div>`;
+    });
+    document.getElementById('playlist').innerHTML = html;
+
+    // Event listener per playlist
+    document.querySelectorAll('.playlist-play-btn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+            const videoId = e.target.dataset.videoid;
+            playYouTube(videoId);
+        });
+    });
+
+    localStorage.setItem("myPlaylist", JSON.stringify(playlist));
+}
+
+function addToPlaylist(track){
+    if(!playlist.some(t=>t.videoId === track.videoId)){
+        playlist.push(track);
+        renderPlaylist();
+    }
+}
+
+// ------------------- YOUTUBE SEARCH -------------------
+const searchInput = document.getElementById('search');
+const API_KEY = 'AIzaSyD3UXhhuS0SNbbt0hUd5qqfASdC3y78pA8';
+
+searchInput.addEventListener('keyup', async (e)=>{
+    let query = e.target.value;
+    if(query.length < 2) return;
+
+    let res = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(query)}&key=${API_KEY}`
+    );
+    let data = await res.json();
+    let videos = data.items;
+
+    let html = '';
+    videos.forEach(video=>{
+        html += `
+        <div class="result-card" data-videoid="${video.id.videoId}" data-title="${video.snippet.title}">
+            <p>${video.snippet.title}</p>
+            <img src="${video.snippet.thumbnails.default.url}">
+            <button class="play-btn">▶️ Play</button>
+            <button class="add-btn">➕ Playlist</button>
+        </div>
+        `;
+    });
+    document.getElementById('results').innerHTML = html;
+
+    document.querySelectorAll('.play-btn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+            const parent = e.target.closest('.result-card');
+            const videoId = parent.dataset.videoid;
+            playYouTube(videoId);
+        });
+    });
+
+    document.querySelectorAll('.add-btn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+            const parent = e.target.closest('.result-card');
+            const track = {
+                title: parent.dataset.title,
+                videoId: parent.dataset.videoid
+            };
+            addToPlaylist(track);
+        });
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #fff0f5;
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+/* Search bar */
+#search-bar {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+}
+#search-bar input {
+    width: 90%;
+    max-width: 500px;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Results & Playlist */
+#results, #playlist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    max-width: 600px;
+    margin: auto;
+}
+
+.result-card, .playlist-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    background: #ffe4e1;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.result-card img {
+    width: 80px;
+    height: auto;
+    border-radius: 3px;
+}
+
+/* Player invisibile */
+#ytPlayer {
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
